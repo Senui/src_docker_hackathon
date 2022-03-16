@@ -1,4 +1,16 @@
 services:
+  backend:
+    build: backend
+    restart: always
+    secrets:
+      - db-password
+    depends_on: 
+      - db
+    environment:
+      - ASPNETCORE_URLS=http://+:8000
+#    depends_on:
+#      db:
+#        condition: service_healthy
   db:
     # We use a mariadb image which supports both amd64 & arm64 architecture
     image: mariadb:10.6.4-focal
@@ -15,41 +27,18 @@ services:
       - db-password
     volumes:
       - db-data:/var/lib/mysql
-    networks:
-      - backnet
     environment:
       - MYSQL_DATABASE=example
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
-    expose:
-      - 3306
-      - 33060
-  backend:
-    build: backend
-    restart: always
-    secrets:
-      - db-password
-    ports:
-      - 5000:5000
-    networks:
-      - backnet
-      - frontnet
-    depends_on:
-      db:
-        condition: service_healthy
+
   proxy:
     build: proxy
-    restart: always
     ports:
       - 80:80
     depends_on: 
       - backend
-    networks:
-      - frontnet
 volumes:
   db-data:
 secrets:
   db-password:
     file: db/password.txt
-networks:
-  backnet:
-  frontnet:
